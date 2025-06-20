@@ -2,26 +2,22 @@ import React, { useState } from 'react';
 
 function App() {
   const [url, setUrl] = useState('');
-  const [max, setMax] = useState(5);
-  const [csvLink, setCsvLink] = useState('');
+  const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const handleExtract = async () => {
     setLoading(true);
-    setError('');
-    setCsvLink('');
+    setResult(null);
     try {
-      const response = await fetch('https://blog-extractor-backend.onrender.com/export_csv', {
+      const response = await fetch('https://blog-extractor-backend.onrender.com/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, max })
+        body: JSON.stringify({ url })
       });
-      const blob = await response.blob();
-      const href = URL.createObjectURL(blob);
-      setCsvLink(href);
+      const data = await response.json();
+      setResult(data);
     } catch (err) {
-      setError('Error al conectar con el backend.');
+      setResult({ error: 'Error al conectar con el backend' });
     }
     setLoading(false);
   };
@@ -31,27 +27,30 @@ function App() {
       <h1>Blog Extractor</h1>
       <input
         type="text"
-        placeholder="URL del blog"
         value={url}
         onChange={e => setUrl(e.target.value)}
-        style={{ width: '60%', marginRight: '1rem', padding: '0.5rem' }}
-      />
-      <input
-        type="number"
-        value={max}
-        onChange={e => setMax(e.target.value)}
-        style={{ width: '5rem', padding: '0.5rem' }}
+        placeholder="Introduce la URL del blog"
+        style={{ width: '80%', padding: '0.5rem' }}
       />
       <button onClick={handleExtract} style={{ marginLeft: '1rem', padding: '0.5rem 1rem' }}>
         Extraer
       </button>
 
       {loading && <p>Cargando...</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {csvLink && (
-        <p>
-          <a href={csvLink} download="posts.csv">Descargar CSV</a>
-        </p>
+      {result && result.error && <p style={{ color: 'red' }}>{result.error}</p>}
+
+      {result && result.titles && (
+        <div>
+          <h2>Títulos encontrados:</h2>
+          <ul>
+            {result.titles.map((t, i) => <li key={i}>{t}</li>)}
+          </ul>
+
+          <h2>Contenido:</h2>
+          <ul>
+            {result.paragraphs.map((p, i) => <li key={i}>{p}</li>)}
+          </ul>
+        </div>
       )}
     </div>
   );
